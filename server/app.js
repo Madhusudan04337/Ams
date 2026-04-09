@@ -32,7 +32,7 @@ app.use("/api",limiter);
 
 // Body parsing
 app.use(express.json());
-app.use(express.erlencoded({ extended: true}));
+app.use(express.urlencoded({ extended: true}));
 
 // Health check
 app.get("/",(req, res) => {
