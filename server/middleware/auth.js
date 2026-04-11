@@ -1,4 +1,4 @@
-const jwt = require = ("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const ApiError = require("../utils/ApiError");
 
 const verifyToken = (req, res, next) => {

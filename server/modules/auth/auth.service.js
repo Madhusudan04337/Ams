@@ -47,4 +47,52 @@ const registerUser = async (userData) => {
         phone,
     });
     return user;
-}   
+};
+
+const loginUser = async(credentials) => {
+    const { email, password } = credentials;
+
+    // find user by email
+    const user = await User.findOne({email}).select('+password');
+    if (!user){
+        throw new ApiError (401, 'Invalid email or password');
+    }
+
+    // check if account is activate
+    if(!user.isActive){
+        throw new ApiError(403, ' Your account as been deactivated. Contact admin.');
+    }
+
+    // compare password
+    const isPasswordCorrect  = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect){
+        throw new ApiError(401, 'Invalid email or password.');
+    }
+
+    // generate token 
+    const accessToken = generateAccessToken(user);
+
+    // update lost login 
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date()});
+
+    return { user, accessToken };
+};
+
+const getMyProfile = async (userId) =>  {
+    const user = await User.findById(userId).populate(
+        "managerId",
+        "username email department"
+    );
+
+    if (!user){
+        throw new ApiError(404,"User not found.");
+    }
+
+    return user;
+};
+
+module.exports = {
+    registerUser,
+    loginUser,
+    getMyProfile,
+};

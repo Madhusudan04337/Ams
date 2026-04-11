@@ -1,5 +1,5 @@
-const mongoose = requried("mongoose");
-const { ROLES } = requried ("../utils/constants");
+const mongoose = require("mongoose");
+const { ROLES } = require ("../utils/constants");
 
 const leaveBalanceSchema = new mongoose.Schema(
     {
