@@ -1,20 +1,13 @@
-const bcrypt = require("bcryptjs")
-const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const ApiError = require("../../utils/ApiError");
 const {ROLES} = require("../../utils/constants");
-
-const generateAccessToken = (user) =>{
-    return jwt.sign(
-        {
-            id: user._id,
-            username: user.username,
-            role: user.role,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_ACCESS_EXPIRT || '15m' }
-    );
-};
+const {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyRefreshToken,
+    revokeRefreshToken,
+} = require("../../utils/generateTokens");
 
 const registerUser = async (userData) => {
     const { username, email, password, role, managerId, department, phone } = userData;
