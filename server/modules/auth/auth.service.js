@@ -16,7 +16,6 @@ const registerUser = async (userData) => {
     const existingUser = await User.findOne({
         $or: [{email},{username}],
     });
-
     if (existingUser){
         throw new ApiError(400, 'User with this email or username already exists.');
     }
@@ -39,36 +38,41 @@ const registerUser = async (userData) => {
         department,
         phone,
     });
-    return user;
+    
+    const userWithoutPassword = user.toObject();
+    delete userWithoutPassword.password;
+    return userWithoutPassword;
 };
 
-const loginUser = async(credentials) => {
+const loginUser = async(credentials, ipAddress, userAgent) => {
     const { email, password } = credentials;
 
-    // find user by email
-    const user = await User.findOne({email}).select('+password');
-    if (!user){
-        throw new ApiError (401, 'Invalid email or password');
+    // Find user by email
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+        throw new ApiError(401, "Invalid email or password.");
     }
 
-    // check if account is activate
-    if(!user.isActive){
-        throw new ApiError(403, ' Your account as been deactivated. Contact admin.');
+    // Check if account is active
+    if (!user.isActive) {
+        throw new ApiError(403, "Your account has been deactivated. Contact admin.");
     }
 
-    // compare password
-    const isPasswordCorrect  = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect){
-        throw new ApiError(401, 'Invalid email or password.');
-    }
+    // Compare password
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) throw new ApiError(401,"Invalid email or password.");
 
-    // generate token 
+    // Generate BOTH tokens
     const accessToken = generateAccessToken(user);
+    const refreshToken = await generateRefreshToken(user, ipAddress, userAgent);
 
-    // update lost login 
-    await User.findByIdAndUpdate(user._id, { lastLogin: new Date()});
+    // Update last login
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
 
-    return { user, accessToken };
+    const userWithoutPassword = user.toObject();
+    delete userWithoutPassword.password;
+    return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
 const getMyProfile = async (userId) =>  {
@@ -81,11 +85,32 @@ const getMyProfile = async (userId) =>  {
         throw new ApiError(404,"User not found.");
     }
 
-    return user;
+    const userWithoutPassword = user.toObject();
+    delete userWithoutPassword.password;
+    return userWithoutPassword;
 };
+
+const refreshAccessToken = async(token) => {
+    // verify the refresh token
+    const refreshToken = await verifyRefreshToken(token);
+
+    // Generate new access token using the populated user
+    const accessToken = generateAccessToken(refreshToken.user);
+
+    return { accessToken };
+};
+
+const logoutUser = async (token) => {
+    await revokeRefreshToken(token);
+    return {
+        message: "Logged out successfully."
+    };
+}
 
 module.exports = {
     registerUser,
     loginUser,
     getMyProfile,
+    refreshAccessToken,
+    logoutUser,
 };

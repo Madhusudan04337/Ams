@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const ApiError = require("../utils/ApiError");
 const RefreshToken = require("../models/RefreshToken");
 
 const generateAccessToken = (user) => {
@@ -34,21 +35,23 @@ const generateRefreshToken = async( user, ipAddress, userAgent) => {
     return refreshToken.token;
 };
 
-const verifyRefreshToken = async(token) => {
-    const refreshToken = await RefreshToken.findOne({ token }).populate("user");
+const verifyRefreshToken = async (token) => {
+  const refreshToken = await RefreshToken.findOne({ token })
+    .populate("user");
 
-    if (!refreshToken){
-        throw new Error("Invalid refresh token.");
-    }
+  if (!refreshToken) {
+    throw new ApiError(401, "Invalid refresh token.");
+  }
 
-    if (refreshToken.isRevoked){
-        throw new Error("Refresh token has been revoked. Please log in again. ");
-    }
+  if (refreshToken.isRevoked) {
+    throw new ApiError(401, "Refresh token has been revoked. Please log in again.");
+  }
 
-    if(new Date() > refreshToken.expiresAt){
-        throw new Error("Refresh token has expired. Please log in again.");
-    }
-    return refreshToken;
+  if (new Date() > refreshToken.expiresAt) {
+    throw new ApiError(401, "Refresh token has expired. Please log in again.");
+  }
+
+  return refreshToken;
 };
 
 const revokeRefreshToken = async(token) => {
