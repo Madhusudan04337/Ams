@@ -35,7 +35,7 @@ const generateRefreshToken = async( user, ipAddress, userAgent) => {
 };
 
 const verifyRefreshToken = async(token) => {
-    const refreshToken = await RefreshToken.fineOne({ token }).populate("user");
+    const refreshToken = await RefreshToken.findOne({ token }).populate("user");
 
     if (!refreshToken){
         throw new Error("Invalid refresh token.");
