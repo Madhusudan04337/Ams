@@ -14,9 +14,9 @@ const generateAccessToken = (user) => {
     );
 };
 
-const generateRefreshToken = async( user, ipAddres, userAgent) => {
+const generateRefreshToken = async( user, ipAddress, userAgent) => {
     // Generate a random token string
-    const token = crypto.rondomBytes(64).toString('hex');
+    const token = crypto.randomBytes(64).toString('hex');
 
     // set expiry to 7 days from now
     const expiresAt = new Date();
