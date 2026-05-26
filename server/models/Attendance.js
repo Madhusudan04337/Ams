@@ -31,7 +31,7 @@ const attendanceSchema = new mongoose.Schema(
             default:null,
         },
         rectifiedBy: {
-            type: mongoose.Schema.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             default: null,
         },
