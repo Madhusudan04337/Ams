@@ -417,7 +417,7 @@ Login  →  accessToken (15 min)  +  refreshToken (7 days stored in DB)
 
 ## 👨‍💻 Author
 
-**Madhusudanan**
+**Madhusudan**
 
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/Madhusudan04337)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/madhusudan-chennai/)
