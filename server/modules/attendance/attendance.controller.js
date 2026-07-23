@@ -6,6 +6,7 @@ const {
   getMyAttendance,
   getAllAttendance,
   rectifyAttendance,
+  exportAttendance,
 } = require("./attendance.service");
 
 const catchAsync = (fn) => (req, res, next) => {
@@ -55,9 +56,27 @@ const rectify = catchAsync(async (req, res) => {
     .json(new ApiResponse(200, "Attendance rectified successfully.", { attendance }));
 });
 
+const exportReport = catchAsync(async (req, res) => {
+  const workbook = await exportAttendance(req.query);
+
+  // Set response headers for file download
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=attendance-report.xlsx"
+  );
+
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
 module.exports = {
   mark,
   myAttendance,
   allAttendance,
   rectify,
+  exportReport,
 };

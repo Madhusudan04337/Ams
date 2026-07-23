@@ -162,9 +162,100 @@ const rectifyAttendance = async (
   return attendance;
 };
 
+const exportAttendance = async (query) => {
+  const ExcelJS = require("exceljs");
+
+  const { from, to, userId } = query;
+
+  const filter = {};
+  if (userId) filter.user = userId;
+
+  if (from || to) {
+    filter.date = {};
+    if (from) filter.date.$gte = new Date(from);
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      filter.date.$lte = toDate;
+    }
+  }
+
+  const records = await Attendance.find(filter)
+    .populate("user", "username email department role")
+    .populate("rectifiedBy", "username")
+    .sort({ date: -1 });
+
+  // Create workbook
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Attendance Report");
+
+  // Header row styling
+  sheet.columns = [
+    { header: "Employee",    key: "username",    width: 20 },
+    { header: "Email",       key: "email",       width: 28 },
+    { header: "Department",  key: "department",  width: 18 },
+    { header: "Date",        key: "date",        width: 15 },
+    { header: "Status",      key: "status",      width: 14 },
+    { header: "Check In",    key: "checkIn",     width: 20 },
+    { header: "Check Out",   key: "checkOut",    width: 20 },
+    { header: "Note",        key: "note",        width: 30 },
+    { header: "Rectified By",key: "rectifiedBy", width: 20 },
+  ];
+
+  // Style header row
+  sheet.getRow(1).eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF2563EB" },
+    };
+    cell.alignment = { horizontal: "center" };
+  });
+
+  // Add data rows
+  records.forEach((record) => {
+    sheet.addRow({
+      username:    record.user?.username || "N/A",
+      email:       record.user?.email || "N/A",
+      department:  record.user?.department || "N/A",
+      date:        record.date
+        ? new Date(record.date).toLocaleDateString("en-IN")
+        : "N/A",
+      status:      record.status,
+      checkIn:     record.checkIn
+        ? new Date(record.checkIn).toLocaleString("en-IN")
+        : "N/A",
+      checkOut:    record.checkOut
+        ? new Date(record.checkOut).toLocaleString("en-IN")
+        : "N/A",
+      note:        record.note || "",
+      rectifiedBy: record.rectifiedBy?.username || "",
+    });
+  });
+
+  // Zebra striping
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber > 1) {
+      row.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: {
+            argb: rowNumber % 2 === 0 ? "FFF1F5F9" : "FFFFFFFF",
+          },
+        };
+      });
+    }
+  });
+
+  return workbook;
+};
+
 module.exports = {
   markAttendance,
   getMyAttendance,
   getAllAttendance,
   rectifyAttendance,
+  exportAttendance,
 };

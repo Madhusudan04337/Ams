@@ -6,6 +6,7 @@ const {
   myAttendance,
   allAttendance,
   rectify,
+  exportReport,
 } = require("./attendance.controller");
 const { verifyToken } = require("../../middleware/auth");
 const { requireRole } = require("../../middleware/rbac");
@@ -40,6 +41,14 @@ router.put(
   verifyToken,
   requireRole("admin", "manager"),
   rectify
+);
+
+// Admin + Manager — export attendance as Excel
+router.get(
+  "/export",
+  verifyToken,
+  requireRole("admin", "manager"),
+  exportReport
 );
 
 module.exports = router;
