@@ -1,0 +1,13 @@
+import axiosInstance from "./axiosInstance";
+
+export const registerAPI = (data) =>
+  axiosInstance.post("/auth/register", data);
+
+export const loginAPI = (data) =>
+  axiosInstance.post("/auth/login", data);
+
+export const logoutAPI = (refreshToken) =>
+  axiosInstance.post("/auth/logout", { refreshToken });
+
+export const getMeAPI = () =>
+  axiosInstance.get("/auth/me");
