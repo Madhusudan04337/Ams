@@ -15,13 +15,17 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 
 // --- Rate Limiting ---
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  skip: (req) => {
+    // Skip rate limiting for localhost during development
+    return process.env.NODE_ENV === "development";
+  },
   message: {
     statusCode: 429,
     success: false,
@@ -48,7 +52,10 @@ app.get("/", (req, res) => {
 
 // --- Routes ---
 app.use("/api/v1/auth", require("./modules/auth/auth.routes"));
-app.use("/api/v1/attendance", require("./modules/attendance/attendance.routes"));
+app.use(
+  "/api/v1/attendance",
+  require("./modules/attendance/attendance.routes"),
+);
 app.use("/api/v1/leave", require("./modules/leave/leave.routes"));
 app.use("/api/v1/analytics", require("./modules/analytics/analytics.routes"));
 app.use("/api/v1/audit", require("./modules/audit/audit.routes"));
