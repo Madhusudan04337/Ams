@@ -3,6 +3,7 @@
 const router = require("express").Router();
 const {
   mark,
+  checkOut,
   myAttendance,
   allAttendance,
   rectify,
@@ -41,6 +42,13 @@ router.put(
   verifyToken,
   requireRole("admin", "manager"),
   rectify
+);
+
+router.put(
+  "/checkout",
+  verifyToken,
+  requireRole("employee"),
+  checkOut
 );
 
 // Admin + Manager — export attendance as Excel

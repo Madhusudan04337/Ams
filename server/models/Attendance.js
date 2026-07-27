@@ -35,6 +35,10 @@ const attendanceSchema = new mongoose.Schema(
             ref: "User",
             default: null,
         },
+        ipAddress: {
+            type: String,
+            default: null,
+        },
     },
     {
         timestamps: true,

@@ -17,3 +17,6 @@ export const exportAttendanceAPI = (params) =>
     params,
     responseType: "blob", // important for file download
   });
+
+export const checkOutAPI = () =>
+  axiosInstance.put("/attendance/checkout");

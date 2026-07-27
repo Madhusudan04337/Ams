@@ -1,10 +1,21 @@
+// src/pages/employee/EmployeeDashboard.jsx
+
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import useAuth from "../../hooks/useAuth";
-import { markAttendanceAPI, getMyAttendanceAPI } from "../../api/attendance.api";
+import {
+  markAttendanceAPI,
+  getMyAttendanceAPI,
+  checkOutAPI,
+} from "../../api/attendance.api";
 import { getMySummaryAPI } from "../../api/analytics.api";
 import { getMyLeavesAPI } from "../../api/leave.api";
-import { formatDate, formatDateTime, getStatusColor, capitalize } from "../../utils/helpers";
+import {
+  formatDate,
+  formatDateTime,
+  getStatusColor,
+  capitalize,
+} from "../../utils/helpers";
 import toast from "react-hot-toast";
 
 const EmployeeDashboard = () => {
@@ -15,9 +26,9 @@ const EmployeeDashboard = () => {
   const [recentAttendance, setRecentAttendance] = useState([]);
   const [recentLeaves, setRecentLeaves] = useState([]);
   const [isMarking, setIsMarking] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load all dashboard data
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -38,11 +49,9 @@ const EmployeeDashboard = () => {
       const todayRecord = attendanceRes.data.data.attendance[0];
       setTodayAttendance(todayRecord || null);
 
-      // Get recent 5 attendance records
       const recentRes = await getMyAttendanceAPI({ limit: 5 });
       setRecentAttendance(recentRes.data.data.attendance);
       setRecentLeaves(leavesRes.data.data.leaves);
-
     } catch (error) {
       toast.error("Failed to load dashboard data.");
     } finally {
@@ -55,13 +64,28 @@ const EmployeeDashboard = () => {
     try {
       await markAttendanceAPI({ status: "present" });
       toast.success("Attendance marked successfully!");
-      loadDashboardData(); // Refresh data
+      loadDashboardData();
     } catch (error) {
       const message =
         error.response?.data?.message || "Failed to mark attendance.";
       toast.error(message);
     } finally {
       setIsMarking(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setIsCheckingOut(true);
+    try {
+      await checkOutAPI();
+      toast.success("Checked out successfully!");
+      loadDashboardData();
+    } catch (error) {
+      const message =
+        error.response?.data?.message || "Failed to check out.";
+      toast.error(message);
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -93,25 +117,52 @@ const EmployeeDashboard = () => {
         </p>
       </div>
 
-      {/* Mark Attendance Card */}
-      <div className={`rounded-2xl p-6 mb-6 ${
-        todayAttendance
-          ? "bg-green-50 border border-green-200"
-          : "bg-blue-50 border border-blue-200"
-      }`}>
-        <div className="flex items-center justify-between">
+      {/* Today's Attendance Card */}
+      <div
+        className={`rounded-2xl p-6 mb-6 ${
+          todayAttendance
+            ? "bg-green-50 border border-green-200"
+            : "bg-blue-50 border border-blue-200"
+        }`}
+      >
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">
               Today's Attendance
             </h2>
+
             {todayAttendance ? (
-              <div className="mt-1">
-                <span className={`badge ${getStatusColor(todayAttendance.status)}`}>
-                  {capitalize(todayAttendance.status.replace("_", " "))}
-                </span>
-                <p className="text-sm text-slate-500 mt-1">
-                  Marked at {formatDateTime(todayAttendance.checkIn)}
+              <div className="mt-2 space-y-1">
+                <div>
+                  <span
+                    className={`badge ${getStatusColor(todayAttendance.status)}`}
+                  >
+                    {capitalize(todayAttendance.status.replace("_", " "))}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-600">
+                  🕐 Check-in:{" "}
+                  <span className="font-medium">
+                    {formatDateTime(todayAttendance.checkIn)}
+                  </span>
                 </p>
+                {todayAttendance.checkOut ? (
+                  <p className="text-sm text-slate-600">
+                    🚪 Check-out:{" "}
+                    <span className="font-medium">
+                      {formatDateTime(todayAttendance.checkOut)}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    🚪 Not checked out yet
+                  </p>
+                )}
+                {todayAttendance.ipAddress && (
+                  <p className="text-xs text-slate-400">
+                    📍 IP: {todayAttendance.ipAddress}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-slate-500 text-sm mt-1">
@@ -120,22 +171,53 @@ const EmployeeDashboard = () => {
             )}
           </div>
 
-          {!todayAttendance && (
-            <button
-              onClick={handleMarkAttendance}
-              disabled={isMarking}
-              className="btn-primary flex items-center gap-2"
-            >
-              {isMarking ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Marking...
-                </>
-              ) : (
-                <>✅ Mark Present</>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            {/* Mark Present Button */}
+            {!todayAttendance && (
+              <button
+                onClick={handleMarkAttendance}
+                disabled={isMarking}
+                className="btn-primary flex items-center gap-2"
+              >
+                {isMarking ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Marking...
+                  </>
+                ) : (
+                  <>✅ Mark Present</>
+                )}
+              </button>
+            )}
+
+            {/* Check Out Button */}
+            {todayAttendance &&
+              todayAttendance.status === "present" &&
+              !todayAttendance.checkOut && (
+                <button
+                  onClick={handleCheckOut}
+                  disabled={isCheckingOut}
+                  className="btn-secondary flex items-center gap-2 border border-slate-300"
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                      Checking out...
+                    </>
+                  ) : (
+                    <>🚪 Check Out</>
+                  )}
+                </button>
               )}
-            </button>
-          )}
+
+            {/* Already checked out message */}
+            {todayAttendance && todayAttendance.checkOut && (
+              <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-medium">
+                ✅ Day complete
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -180,21 +262,41 @@ const EmployeeDashboard = () => {
         </h2>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { type: "Casual", value: user?.leaveBalance?.casual, color: "bg-blue-500" },
-            { type: "Sick", value: user?.leaveBalance?.sick, color: "bg-red-500" },
-            { type: "Earned", value: user?.leaveBalance?.earned, color: "bg-green-500" },
+            {
+              type: "Casual",
+              value: user?.leaveBalance?.casual,
+              color: "bg-blue-500",
+            },
+            {
+              type: "Sick",
+              value: user?.leaveBalance?.sick,
+              color: "bg-red-500",
+            },
+            {
+              type: "Earned",
+              value: user?.leaveBalance?.earned,
+              color: "bg-green-500",
+            },
           ].map((leave) => (
-            <div key={leave.type} className="text-center p-4 bg-slate-50 rounded-xl">
-              <div className={`text-3xl font-bold text-white ${leave.color} w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2`}>
+            <div
+              key={leave.type}
+              className="text-center p-4 bg-slate-50 rounded-xl"
+            >
+              <div
+                className={`text-3xl font-bold text-white ${leave.color} w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2`}
+              >
                 {leave.value}
               </div>
-              <p className="text-sm text-slate-600 font-medium">{leave.type}</p>
+              <p className="text-sm text-slate-600 font-medium">
+                {leave.type}
+              </p>
               <p className="text-xs text-slate-400">days left</p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Bottom Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Recent Attendance */}
@@ -203,9 +305,12 @@ const EmployeeDashboard = () => {
             Recent Attendance
           </h2>
           {recentAttendance.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-4">
-              No attendance records yet.
-            </p>
+            <div className="text-center py-6">
+              <p className="text-3xl mb-2">📅</p>
+              <p className="text-slate-400 text-sm">
+                No attendance records yet.
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {recentAttendance.map((record) => (
@@ -218,12 +323,17 @@ const EmployeeDashboard = () => {
                       {formatDate(record.date)}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {record.checkIn
-                        ? `Check-in: ${formatDateTime(record.checkIn)}`
-                        : "No check-in"}
+                      In: {formatDateTime(record.checkIn)}
                     </p>
+                    {record.checkOut && (
+                      <p className="text-xs text-slate-400">
+                        Out: {formatDateTime(record.checkOut)}
+                      </p>
+                    )}
                   </div>
-                  <span className={`badge ${getStatusColor(record.status)}`}>
+                  <span
+                    className={`badge ${getStatusColor(record.status)}`}
+                  >
                     {capitalize(record.status.replace("_", " "))}
                   </span>
                 </div>
@@ -232,15 +342,18 @@ const EmployeeDashboard = () => {
           )}
         </div>
 
-        {/* Recent Leaves */}
+        {/* Recent Leave Requests */}
         <div className="card">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">
             Recent Leave Requests
           </h2>
           {recentLeaves.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-4">
-              No leave requests yet.
-            </p>
+            <div className="text-center py-6">
+              <p className="text-3xl mb-2">🏖️</p>
+              <p className="text-slate-400 text-sm">
+                No leave requests yet.
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {recentLeaves.map((leave) => (
@@ -253,11 +366,18 @@ const EmployeeDashboard = () => {
                       {leave.type} Leave
                     </p>
                     <p className="text-xs text-slate-400">
-                      {formatDate(leave.from)} → {formatDate(leave.to)}
-                      {" "}({leave.totalDays} days)
+                      {formatDate(leave.from)} → {formatDate(leave.to)}{" "}
+                      ({leave.totalDays} days)
                     </p>
+                    {leave.note && (
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Note: {leave.note}
+                      </p>
+                    )}
                   </div>
-                  <span className={`badge ${getStatusColor(leave.status)}`}>
+                  <span
+                    className={`badge ${getStatusColor(leave.status)}`}
+                  >
                     {capitalize(leave.status)}
                   </span>
                 </div>
@@ -272,7 +392,7 @@ const EmployeeDashboard = () => {
   );
 };
 
-// Stat card component
+// Reusable stat card
 const StatCard = ({ label, value, icon, color, bg }) => (
   <div className={`${bg} rounded-xl p-4`}>
     <div className="flex items-center justify-between mb-2">
@@ -283,7 +403,7 @@ const StatCard = ({ label, value, icon, color, bg }) => (
   </div>
 );
 
-// Get greeting based on time
+// Greeting based on time
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "morning";

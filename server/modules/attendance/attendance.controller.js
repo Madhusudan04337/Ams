@@ -3,6 +3,7 @@
 const ApiResponse = require("../../utils/ApiResponse");
 const {
   markAttendance,
+  checkOutAttendance,
   getMyAttendance,
   getAllAttendance,
   rectifyAttendance,
@@ -24,6 +25,13 @@ const mark = catchAsync(async (req, res) => {
   return res
     .status(201)
     .json(new ApiResponse(201, "Attendance marked successfully.", { attendance }));
+});
+
+const checkOut = catchAsync(async (req, res) => {
+  const attendance = await checkOutAttendance(req.user.id);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Checked out successfully.", { attendance }));
 });
 
 const myAttendance = catchAsync(async (req, res) => {
@@ -75,6 +83,7 @@ const exportReport = catchAsync(async (req, res) => {
 
 module.exports = {
   mark,
+  checkOut,
   myAttendance,
   allAttendance,
   rectify,

@@ -29,6 +29,7 @@ const markAttendance = async (userId, body, ipAddress, userAgent) => {
     status: status || ATTENDANCE_STATUS.PRESENT,
     checkIn: new Date(),
     note: note || null,
+    ipAddress,
   });
 
   // Create audit log
@@ -252,10 +253,38 @@ const exportAttendance = async (query) => {
   return workbook;
 };
 
+const checkOutAttendance = async (userId) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const attendance = await Attendance.findOne({
+    user: userId,
+    date: today,
+  });
+
+  if (!attendance) {
+    throw new ApiError(400, "No attendance record found for today.");
+  }
+
+  if (attendance.checkOut) {
+    throw new ApiError(400, "You have already checked out today.");
+  }
+
+  if (attendance.status !== "present") {
+    throw new ApiError(400, "Check-out only available for present status.");
+  }
+
+  attendance.checkOut = new Date();
+  await attendance.save();
+
+  return attendance;
+};
+
 module.exports = {
   markAttendance,
   getMyAttendance,
   getAllAttendance,
   rectifyAttendance,
   exportAttendance,
+  checkOutAttendance,
 };
