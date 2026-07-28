@@ -36,20 +36,23 @@ const EmployeeDashboard = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
+      // Use local date formatted as YYYY-MM-DD
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      const [summaryRes, attendanceRes, leavesRes] = await Promise.all([
-        getMySummaryAPI(),
-        getMyAttendanceAPI({ from: today, to: today, limit: 1 }),
-        getMyLeavesAPI({ limit: 3 }),
-      ]);
+      const [summaryRes, attendanceRes, leavesRes, recentRes] =
+        await Promise.all([
+          getMySummaryAPI(),
+          getMyAttendanceAPI({ from: today, to: today, limit: 1 }),
+          getMyLeavesAPI({ limit: 3 }),
+          getMyAttendanceAPI({ limit: 5 }),
+        ]);
 
       setSummary(summaryRes.data.data.summary);
 
       const todayRecord = attendanceRes.data.data.attendance[0];
       setTodayAttendance(todayRecord || null);
 
-      const recentRes = await getMyAttendanceAPI({ limit: 5 });
       setRecentAttendance(recentRes.data.data.attendance);
       setRecentLeaves(leavesRes.data.data.leaves);
     } catch (error) {
@@ -81,8 +84,7 @@ const EmployeeDashboard = () => {
       toast.success("Checked out successfully!");
       loadDashboardData();
     } catch (error) {
-      const message =
-        error.response?.data?.message || "Failed to check out.";
+      const message = error.response?.data?.message || "Failed to check out.";
       toast.error(message);
     } finally {
       setIsCheckingOut(false);
@@ -101,7 +103,6 @@ const EmployeeDashboard = () => {
 
   return (
     <DashboardLayout>
-
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">
@@ -287,9 +288,7 @@ const EmployeeDashboard = () => {
               >
                 {leave.value}
               </div>
-              <p className="text-sm text-slate-600 font-medium">
-                {leave.type}
-              </p>
+              <p className="text-sm text-slate-600 font-medium">{leave.type}</p>
               <p className="text-xs text-slate-400">days left</p>
             </div>
           ))}
@@ -298,7 +297,6 @@ const EmployeeDashboard = () => {
 
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
         {/* Recent Attendance */}
         <div className="card">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">
@@ -331,9 +329,7 @@ const EmployeeDashboard = () => {
                       </p>
                     )}
                   </div>
-                  <span
-                    className={`badge ${getStatusColor(record.status)}`}
-                  >
+                  <span className={`badge ${getStatusColor(record.status)}`}>
                     {capitalize(record.status.replace("_", " "))}
                   </span>
                 </div>
@@ -350,9 +346,7 @@ const EmployeeDashboard = () => {
           {recentLeaves.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-3xl mb-2">🏖️</p>
-              <p className="text-slate-400 text-sm">
-                No leave requests yet.
-              </p>
+              <p className="text-slate-400 text-sm">No leave requests yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -366,8 +360,8 @@ const EmployeeDashboard = () => {
                       {leave.type} Leave
                     </p>
                     <p className="text-xs text-slate-400">
-                      {formatDate(leave.from)} → {formatDate(leave.to)}{" "}
-                      ({leave.totalDays} days)
+                      {formatDate(leave.from)} → {formatDate(leave.to)} (
+                      {leave.totalDays} days)
                     </p>
                     {leave.note && (
                       <p className="text-xs text-slate-400 mt-0.5">
@@ -375,9 +369,7 @@ const EmployeeDashboard = () => {
                       </p>
                     )}
                   </div>
-                  <span
-                    className={`badge ${getStatusColor(leave.status)}`}
-                  >
+                  <span className={`badge ${getStatusColor(leave.status)}`}>
                     {capitalize(leave.status)}
                   </span>
                 </div>
@@ -385,9 +377,7 @@ const EmployeeDashboard = () => {
             </div>
           )}
         </div>
-
       </div>
-
     </DashboardLayout>
   );
 };

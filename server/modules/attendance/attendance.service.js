@@ -9,9 +9,16 @@ const markAttendance = async (userId, body, ipAddress, userAgent) => {
   const { status, note } = body;
 
   // Normalize today's date to midnight
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  const now = new Date();
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
   // Check duplicate
   const existing = await Attendance.findOne({
     user: userId,
@@ -55,7 +62,11 @@ const getMyAttendance = async (userId, query) => {
 
   if (from || to) {
     filter.date = {};
-    if (from) filter.date.$gte = new Date(from);
+    if (from) {
+      const fromDate = new Date(from);
+      fromDate.setHours(0, 0, 0, 0);
+      filter.date.$gte = fromDate;
+    }
     if (to) {
       const toDate = new Date(to);
       toDate.setHours(23, 59, 59, 999);
@@ -126,7 +137,7 @@ const rectifyAttendance = async (
   body,
   performedBy,
   ipAddress,
-  userAgent
+  userAgent,
 ) => {
   const { status, note } = body;
 
@@ -192,15 +203,15 @@ const exportAttendance = async (query) => {
 
   // Header row styling
   sheet.columns = [
-    { header: "Employee",    key: "username",    width: 20 },
-    { header: "Email",       key: "email",       width: 28 },
-    { header: "Department",  key: "department",  width: 18 },
-    { header: "Date",        key: "date",        width: 15 },
-    { header: "Status",      key: "status",      width: 14 },
-    { header: "Check In",    key: "checkIn",     width: 20 },
-    { header: "Check Out",   key: "checkOut",    width: 20 },
-    { header: "Note",        key: "note",        width: 30 },
-    { header: "Rectified By",key: "rectifiedBy", width: 20 },
+    { header: "Employee", key: "username", width: 20 },
+    { header: "Email", key: "email", width: 28 },
+    { header: "Department", key: "department", width: 18 },
+    { header: "Date", key: "date", width: 15 },
+    { header: "Status", key: "status", width: 14 },
+    { header: "Check In", key: "checkIn", width: 20 },
+    { header: "Check Out", key: "checkOut", width: 20 },
+    { header: "Note", key: "note", width: 30 },
+    { header: "Rectified By", key: "rectifiedBy", width: 20 },
   ];
 
   // Style header row
@@ -217,20 +228,20 @@ const exportAttendance = async (query) => {
   // Add data rows
   records.forEach((record) => {
     sheet.addRow({
-      username:    record.user?.username || "N/A",
-      email:       record.user?.email || "N/A",
-      department:  record.user?.department || "N/A",
-      date:        record.date
+      username: record.user?.username || "N/A",
+      email: record.user?.email || "N/A",
+      department: record.user?.department || "N/A",
+      date: record.date
         ? new Date(record.date).toLocaleDateString("en-IN")
         : "N/A",
-      status:      record.status,
-      checkIn:     record.checkIn
+      status: record.status,
+      checkIn: record.checkIn
         ? new Date(record.checkIn).toLocaleString("en-IN")
         : "N/A",
-      checkOut:    record.checkOut
+      checkOut: record.checkOut
         ? new Date(record.checkOut).toLocaleString("en-IN")
         : "N/A",
-      note:        record.note || "",
+      note: record.note || "",
       rectifiedBy: record.rectifiedBy?.username || "",
     });
   });
@@ -254,9 +265,16 @@ const exportAttendance = async (query) => {
 };
 
 const checkOutAttendance = async (userId) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  const now = new Date();
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
   const attendance = await Attendance.findOne({
     user: userId,
     date: today,
