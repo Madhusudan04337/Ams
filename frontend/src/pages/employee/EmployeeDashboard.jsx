@@ -159,11 +159,6 @@ const EmployeeDashboard = () => {
                     🚪 Not checked out yet
                   </p>
                 )}
-                {todayAttendance.ipAddress && (
-                  <p className="text-xs text-slate-400">
-                    📍 IP: {todayAttendance.ipAddress}
-                  </p>
-                )}
               </div>
             ) : (
               <p className="text-slate-500 text-sm mt-1">

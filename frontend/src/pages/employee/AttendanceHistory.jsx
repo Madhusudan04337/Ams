@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { getMyAttendanceAPI } from "../../api/attendance.api";
-import { formatDate, formatDateTime, getStatusColor, capitalize } from "../../utils/helpers";
+import {
+  formatDate,
+  formatDateTime,
+  getStatusColor,
+  capitalize,
+} from "../../utils/helpers";
 import toast from "react-hot-toast";
 
 const AttendanceHistory = () => {
@@ -55,7 +60,6 @@ const AttendanceHistory = () => {
 
   return (
     <DashboardLayout>
-
       <h1 className="page-title">Attendance History</h1>
 
       {/* Filters */}
@@ -124,6 +128,7 @@ const AttendanceHistory = () => {
                   <th>Status</th>
                   <th>Check In</th>
                   <th>Check Out</th>
+                  <th>IP Address</th>
                   <th>Note</th>
                 </tr>
               </thead>
@@ -132,12 +137,23 @@ const AttendanceHistory = () => {
                   <tr key={record._id}>
                     <td className="font-medium">{formatDate(record.date)}</td>
                     <td>
-                      <span className={`badge ${getStatusColor(record.status)}`}>
+                      <span
+                        className={`badge ${getStatusColor(record.status)}`}
+                      >
                         {capitalize(record.status.replace("_", " "))}
                       </span>
                     </td>
                     <td>{formatDateTime(record.checkIn)}</td>
                     <td>{formatDateTime(record.checkOut)}</td>
+                    <td>
+                      {record.ipAddress ? (
+                        <span className="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                          {record.ipAddress}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
                     <td className="text-slate-400 text-sm">
                       {record.note || "—"}
                     </td>
@@ -150,7 +166,8 @@ const AttendanceHistory = () => {
             {pagination.pages > 1 && (
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
                 <p className="text-sm text-slate-500">
-                  Showing page {pagination.page} of {pagination.pages} ({pagination.total} records)
+                  Showing page {pagination.page} of {pagination.pages} (
+                  {pagination.total} records)
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -173,7 +190,6 @@ const AttendanceHistory = () => {
           </>
         )}
       </div>
-
     </DashboardLayout>
   );
 };
